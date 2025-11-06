@@ -1,0 +1,86 @@
+# Makefile pour créer un bundle macOS de BUTT avec StereoTool SDK
+# Utilisation: make -f Makefile.bundle bundle
+
+# Configuration
+APP_NAME = BUTT
+VERSION = 1.45.0
+BUNDLE_NAME = $(APP_NAME).app
+DMG_NAME = BUTT-$(VERSION)-macOS-StereoTool
+
+# Répertoires
+BUILD_DIR = build
+BUNDLE_DIR = $(BUILD_DIR)/$(BUNDLE_NAME)
+CONTENTS_DIR = $(BUNDLE_DIR)/Contents
+MACOS_DIR = $(CONTENTS_DIR)/MacOS
+FRAMEWORKS_DIR = $(CONTENTS_DIR)/Frameworks
+RESOURCES_DIR = $(CONTENTS_DIR)/Resources
+
+# Cibles principales
+.PHONY: all bundle clean dmg test install
+
+all: bundle
+
+# Compilation de BUTT
+compile:
+	@echo "🔨 Compilation de BUTT..."
+	$(MAKE) -C src clean
+	$(MAKE) -C src
+	@echo "✅ Compilation terminée"
+
+# Création du bundle complet
+bundle: compile
+	@echo "🎯 Création du bundle macOS..."
+	chmod +x build_macos_bundle.sh
+	./build_macos_bundle.sh
+	@echo "✅ Bundle créé avec succès!"
+
+# Nettoyage
+clean:
+	@echo "🧹 Nettoyage..."
+	rm -rf $(BUILD_DIR)
+	$(MAKE) -C src clean
+	@echo "✅ Nettoyage terminé"
+
+# Création du DMG seulement
+dmg: bundle
+	@echo "💿 Création du DMG..."
+	rm -f $(BUILD_DIR)/$(DMG_NAME).dmg
+	hdiutil create -srcfolder $(BUNDLE_DIR) -volname "$(DMG_NAME)" -format UDZO -imagekey zlib-level=9 $(BUILD_DIR)/$(DMG_NAME).dmg
+	@echo "✅ DMG créé: $(BUILD_DIR)/$(DMG_NAME).dmg"
+
+# Tests de fonctionnalité
+test: bundle
+	@echo "🧪 Tests du bundle..."
+	@echo "Vérification de la structure du bundle:"
+	@ls -la $(BUNDLE_DIR)/
+	@echo ""
+	@echo "Vérification des frameworks:"
+	@ls -la $(FRAMEWORKS_DIR)/
+	@echo ""
+	@echo "Vérification des dépendances de l'exécutable:"
+	@otool -L $(MACOS_DIR)/$(APP_NAME) | grep -E "(\.dylib|\.framework)" | head -10
+	@echo ""
+	@echo "Vérification des dépendances StereoTool:"
+	@otool -L $(FRAMEWORKS_DIR)/libStereoTool64.dylib | grep -E "(\.dylib|\.framework)" | head -5
+	@echo ""
+	@echo "✅ Tests terminés"
+
+# Installation dans Applications (nécessite sudo)
+install: bundle
+	@echo "🚀 Installation dans /Applications..."
+	sudo rm -rf /Applications/$(BUNDLE_NAME)
+	sudo cp -R $(BUNDLE_DIR) /Applications/
+	@echo "✅ Installation terminée"
+
+# Aide
+help:
+	@echo "📋 Commandes disponibles:"
+	@echo "  make -f Makefile.bundle compile   - Compile BUTT"
+	@echo "  make -f Makefile.bundle bundle    - Crée le bundle macOS complet"
+	@echo "  make -f Makefile.bundle dmg       - Crée le bundle et génère un DMG"
+	@echo "  make -f Makefile.bundle test      - Teste le bundle créé"
+	@echo "  make -f Makefile.bundle install   - Installe le bundle dans Applications"
+	@echo "  make -f Makefile.bundle clean     - Nettoie les fichiers temporaires"
+	@echo "  make -f Makefile.bundle help      - Affiche cette aide"
+	@echo ""
+	@echo "🎯 Commande recommandée: make -f Makefile.bundle dmg" 

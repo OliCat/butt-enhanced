@@ -1,0 +1,287 @@
+--- a/src/FLTK/fl_callbacks.cpp
++++ b/src/FLTK/fl_callbacks.cpp
+@@ -4265,6 +4265,7 @@
+ 
+ void window_main_close_cb(bool ask)
+ {
++    printf("BUTT: Début fermeture propre...\n");
+     if (ask && (connected || recording)) {
+         int ret;
+         if (connected) {
+@@ -4285,6 +4286,7 @@
+         }
+     }
+ 
++    // 1. Arrêter AES67 en premier (avant les autres ressources)
++    aes67_output_t* aes67_output = aes67_output_get_global_instance();
++    if (aes67_output && aes67_output->initialized) {
++        printf("BUTT: Arrêt AES67...\n");
++        aes67_output->config.active = false;  // Désactiver sortie
++        aes67_output_stop_sap_announcements(aes67_output);  // Arrêter SAP
++        ptp_stop_sync(&aes67_output->ptp_state);  // Arrêter PTP
++        
++        // Attendre que les threads se terminent
++        int timeout = 0;
++        while (timeout < 50) {  // 5 secondes max
++            if (!aes67_output->ptp_state.config.enabled) break;
++            usleep(100000);  // 100ms
++            timeout++;
++        }
++        printf("BUTT: AES67 arrêté\n");
++    }
+
+     stop_recording(false);
+     button_disconnect_cb(false);
+ 
+@@ -4292,6 +4294,7 @@
+         cfg.gui.y_pos = fl_g->window_main->y_root();
+         cfg.gui.window_height = fl_g->window_main->h();
+     }
+ 
++    // 2. Cleanup audio avec timeout
+     snd_close_streams();
+     snd_close_portaudio();
+     cfg_write_file(NULL);
+@@ -4299,7 +4302,8 @@
+     exit(0);
+ }
+ 
+--- a/src/port_audio.cpp
++++ b/src/port_audio.cpp
+@@ -1820,6 +1820,7 @@
+ 
+ void snd_close_streams(void)
+ {
++    printf("BUTT: Début cleanup streams audio...\n");
+     int stream_is_active = Pa_IsStreamActive(stream);
+     int stream2_is_active = Pa_IsStreamActive(stream2);
+ 
+@@ -1830,6 +1831,7 @@
+     if (stream_is_active == 1) {
+         snd_stop_mixer_thread();
+         Pa_AbortStream(stream);
++        printf("BUTT: Stream principal arrêté\n");
+         Pa_CloseStream(stream);
+         g_stop_vu_meter_timer = 1;
+         while (g_vu_meter_timer_is_active == 1) {
+@@ -1840,6 +1842,7 @@
+ 
+         // Cleanup StereoTool
+         stereo_tool_cleanup();
++        printf("BUTT: StereoTool nettoyé\n");
+         
+         // Cleanup AES67 output
+         aes67_output_t* aes67_output = aes67_output_get_global_instance();
+@@ -1847,6 +1850,7 @@
+             aes67_output_cleanup(aes67_output);
+         }
+ 
++        printf("BUTT: AES67 nettoyé\n");
+         free(pa_pcm_buf);
+         free(pa_mixer_buf);
+         free(encode_buf);
+@@ -1860,6 +1864,7 @@
+         rb_free(&pa_pcm_rb);
+         rb_free(&rec_rb);
+         rb_free(&stream_rb);
++        printf("BUTT: Buffers audio libérés\n");
+     }
+ 
+     if (stream2_is_active == 1) {
+@@ -1867,6 +1872,7 @@
+         free(pa_pcm_buf2);
+         rb_free(&pa_pcm2_rb);
+     }
++    printf("BUTT: Cleanup streams terminé\n");
+ }
+ 
+--- a/src/aes67_output.cpp
++++ b/src/aes67_output.cpp
+@@ -270,6 +270,7 @@
+ 
+ void aes67_output_cleanup(aes67_output_t* output) {
+     if (!output) {
++        printf("AES67: Cleanup - output NULL\n");
+         return;
+     }
+ 
+@@ -277,6 +278,7 @@
+     if (aes67_socket >= 0) {
+         close(aes67_socket);
+         aes67_socket = -1;
++        printf("AES67: Socket fermée\n");
+     }
+ 
+     if (output->output_buffer) {
+@@ -284,6 +286,7 @@
+         output->output_buffer = NULL;
+     }
+ 
++    printf("AES67: Début cleanup PTP/SDP/SAP...\n");
+     // Nettoyer PTP, SDP et SAP
+     ptp_cleanup(&output->ptp_state);
+     sdp_cleanup(&output->sdp_state);
+@@ -291,6 +294,7 @@
+ 
+     output->initialized = false;
+     output->buffer_size = 0;
++    output->config.active = false;
+ 
+     printf("AES67: Sortie nettoyée\n");
+ }
+ 
+--- a/src/aes67_ptp.cpp
++++ b/src/aes67_ptp.cpp
+@@ -200,6 +200,7 @@
+ 
+ int ptp_stop_sync(ptp_state_t* ptp_state) {
+     if (!ptp_state || !ptp_state->initialized) {
++        printf("PTP: Stop - état non initialisé\n");
+         return -1;
+     }
+     
+@@ -207,6 +208,7 @@
+         printf("PTP: Synchronisation déjà arrêtée\n");
+         return 0;
+     }
+     
++    printf("PTP: Arrêt synchronisation...\n");
+     ptp_thread_running = false;
+     ptp_state->config.enabled = false;
+     
+@@ -214,6 +216,7 @@
+     
+     printf("PTP: Synchronisation arrêtée\n");
+     return 0;
++    printf("PTP: Thread synchronisation terminé\n");
+ }
+ 
+ // Nettoyage PTP
+@@ -221,6 +224,7 @@
+         return;
+     }
+     
++    printf("PTP: Début cleanup...\n");
+     ptp_stop_sync(ptp_state);
+     ptp_state->initialized = false;
+     
+@@ -228,6 +232,7 @@
+ 
+ // Fonctions de messages PTP (simplifiées pour l'instant)
+ int ptp_send_sync_message(ptp_state_t* ptp_state) {
++    if (!ptp_thread_running) return -1;  // Arrêt si thread arrêté
+     if (!ptp_state || !ptp_state->initialized) {
+         return -1;
+     }
+@@ -237,6 +242,7 @@
+ }
+ 
+ int ptp_send_announce_message(ptp_state_t* ptp_state) {
++    if (!ptp_thread_running) return -1;  // Arrêt si thread arrêté
+     if (!ptp_state || !ptp_state->initialized) {
+         return -1;
+     }
+@@ -246,6 +252,7 @@
+ }
+ 
+ int ptp_send_delay_req_message(ptp_state_t* ptp_state) {
++    if (!ptp_thread_running) return -1;  // Arrêt si thread arrêté
+     if (!ptp_state || !ptp_state->initialized) {
+         return -1;
+     }
+@@ -253,6 +260,7 @@
+     return 0;
+ }
+ 
+--- a/src/aes67_sap.cpp
++++ b/src/aes67_sap.cpp
+@@ -200,6 +200,7 @@
+ 
+ int sap_stop_announcements(sap_state_t* sap_state) {
+     if (!sap_state) {
++        printf("SAP: Stop - sap_state NULL\n");
+         return -1;
+     }
+     
+@@ -207,6 +208,7 @@
+         return 0;
+     }
+     
++    printf("SAP: Arrêt annonces...\n");
+     g_sap_thread.running = false;
+     sap_state->config.enabled = false;
+     
+@@ -214,6 +216,7 @@
+     
+     printf("SAP: Annonces arrêtées\n");
+     
++    printf("SAP: Thread annonces terminé\n");
+     return 0;
+ }
+ 
+@@ -270,6 +273,7 @@
+ 
+ void sap_cleanup(sap_state_t* sap_state) {
+     if (!sap_state) {
++        printf("SAP: Cleanup - sap_state NULL\n");
+         return;
+     }
+     
+@@ -277,6 +281,7 @@
+     sap_stop_announcements(sap_state);
+     
+     // Fermer le socket
++    printf("SAP: Fermeture socket...\n");
+     if (sap_state->sock_fd >= 0) {
+         close(sap_state->sock_fd);
+         sap_state->sock_fd = -1;
+@@ -284,6 +289,7 @@
+     
+     // Libérer le contenu SDP
+     if (sap_state->sdp_content) {
++        printf("SAP: Libération contenu SDP...\n");
+         free(sap_state->sdp_content);
+         sap_state->sdp_content = NULL;
+     }
+@@ -291,6 +297,7 @@
+     sap_state->initialized = false;
+     
+     printf("SAP: Nettoyage terminé\n");
++    printf("SAP: Cleanup complet\n");
+ }
+ 
+--- a/src/aes67_sap.cpp
++++ b/src/aes67_sap.cpp
+@@ -158,6 +158,7 @@
+ static void* sap_announcement_thread(void* arg) {
+     sap_thread_data_t* thread_data = (sap_thread_data_t*)arg;
+     sap_state_t* sap_state = thread_data->sap_state;
++    printf("SAP: Thread annonce démarré\n");
+     
+     while (thread_data->running && sap_state->config.enabled) {
+         sap_send_announcement(sap_state);
+@@ -165,6 +166,7 @@
+         usleep(sap_state->config.announcement_interval_ms * 1000);
+     }
+     
++    printf("SAP: Thread annonce arrêté\n");
+     return NULL;
+ }
+ 
+--- a/src/aes67_ptp.cpp
++++ b/src/aes67_ptp.cpp
+@@ -120,6 +120,7 @@
+ static void* ptp_sync_thread(void* arg) {
+     ptp_state_t* ptp_state = (ptp_state_t*)arg;
+     
++    printf("PTP: Thread synchronisation démarré\n");
+     
+     while (ptp_thread_running && ptp_state->config.enabled) {
+         // Envoyer message de synchronisation
+@@ -130,6 +131,7 @@
+         usleep(ptp_state->config.sync_interval_ms * 1000);
+     }
+     
++    printf("PTP: Thread synchronisation arrêté\n");
+     return NULL;
+ } 

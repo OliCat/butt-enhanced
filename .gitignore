@@ -1,0 +1,236 @@
+# BUTT Enhanced - .gitignore
+# Pour GitHub / Distribution Open Source
+
+# ============================================
+# SDK StereoTool (PROPRIÉTAIRE - NE PAS DISTRIBUER)
+# ============================================
+libStereoTool*.dylib
+StereoTool*.dll
+*.sts
+*.preset
+
+# ============================================
+# Binaires et builds
+# ============================================
+# Exécutables
+butt
+butt.exe
+*.app/
+*.dmg
+*.pkg
+*.deb
+*.rpm
+
+# Répertoires de build
+build/
+build-*/
+dist/
+*.build/
+
+# Fichiers objets et bibliothèques
+*.o
+*.lo
+*.a
+*.la
+*.so
+*.so.*
+*.dylib
+*.dll
+*.exe
+
+# ============================================
+# Fichiers de compilation
+# ============================================
+# Autotools
+.deps/
+.libs/
+autom4te.cache/
+aclocal.m4
+compile
+config.guess
+config.h
+config.h.in
+config.log
+config.status
+config.sub
+configure
+depcomp
+install-sh
+libtool
+ltmain.sh
+missing
+stamp-h1
+*.m4
+!m4/
+m4/*
+!m4/.gitkeep
+
+# Makefiles générés
+Makefile
+Makefile.in
+src/Makefile
+src/Makefile.in
+po/Makefile.in.in
+po/Makefile.in
+po/Makefile
+po/POTFILES
+po/stamp-po
+po/*.gmo
+
+# ============================================
+# Fichiers temporaires et de debug
+# ============================================
+# Logs
+*.log
+*.tmp
+*.pid
+
+# Debug
+debug_*
+*.dSYM/
+core
+core.*
+
+# Backups
+*~
+*.bak
+*.swp
+*.swo
+*#
+.#*
+backup_*/
+
+# ============================================
+# Fichiers de test
+# ============================================
+test_output.*
+test_*.wav
+test_*.mp3
+*.pcap
+simple_stereo_test
+
+# ============================================
+# Documentation de développement (à exclure)
+# ============================================
+# Garder seulement la doc utile pour les utilisateurs
+CORRECTION_*.md
+DEBUG_*.md
+SOLUTION_*.md
+GUIDE_TEST_*.md
+QUICK_WINS_*.md
+SYNTHESE_*.md
+CHANGELOG_V*.md
+archives_dev_*/
+*.tar.gz
+
+# Guides internes (pas pour GitHub public)
+GUIDE_GITHUB.md
+POUR_COMMENCER.md
+FICHIERS_CREES.md
+GUIDE_INSTALLATION_MAC_STUDIO.md
+IMPLEMENTATION_SUMMARY.md
+RESUME_BUNDLE_MACOS.md
+ROADMAP_EVOLUTION_2025.md
+README_DOCUMENTATION.md
+
+# ============================================
+# Fichiers système
+# ============================================
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Linux
+*~
+.directory
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# ============================================
+# IDE et éditeurs
+# ============================================
+# VSCode
+.vscode/
+*.code-workspace
+
+# Xcode
+*.xcodeproj/
+*.xcworkspace/
+xcuserdata/
+
+# Vim
+*.swp
+*.swo
+*~
+
+# Emacs
+*~
+\#*\#
+.\#*
+
+# ============================================
+# Fichiers de configuration locale
+# ============================================
+# Configuration personnelle (à ne pas partager)
+local_config.h
+*.local
+
+# ============================================
+# Dépendances externes
+# ============================================
+# À télécharger séparément
+node_modules/
+vendor/
+*.egg-info/
+
+# ============================================
+# Fichiers à garder explicitement
+# ============================================
+# Forcer l'inclusion de certains fichiers importants
+!README.md
+!LICENSE
+!CONTRIBUTING.md
+!INSTALLATION.md
+!INTEGRATION_BLACKHOLE_COMPLETE.md
+!DEMARRAGE_RAPIDE_BLACKHOLE.md
+!docs/
+!integration_blackhole_butt/
+!scripts/
+!src/
+!po/README
+!m4/.gitkeep
+
+# ============================================
+# Spécifique à BUTT Enhanced
+# ============================================
+# Captures et analyses (dev only)
+sap_captures/
+tests_sdp/
+tests/
+integration_blackhole_butt.tar.gz
+
+# Scripts de test spécifiques
+test_aes67*.sh
+test_audio*.sh
+test_fermeture*.sh
+test_pcm*.sdp
+
+# Fichiers SDP de test
+*.sdp
+!docs/*.sdp
+
+# ============================================
+# Archives et sauvegardes
+# ============================================
+*.zip
+*.tar
+*.tar.gz
+*.tgz
+*.rar
+*.7z

@@ -1,0 +1,193 @@
+# Makefile pour la compilation Intel x86_64 de BUTT avec StereoTool SDK
+
+# Configuration
+ARCH = x86_64
+BUILD_DIR = build-$(ARCH)
+APP_NAME = BUTT
+BUNDLE_NAME = BUTT-Intel.app
+VERSION = 1.45.0
+BUNDLE_ID = de.danielnoethen.butt.intel
+
+# Variables d'environnement pour la compilation croisée
+export CC = clang -arch $(ARCH)
+export CXX = clang++ -arch $(ARCH)
+export CFLAGS = -arch $(ARCH) -mmacosx-version-min=10.12
+export CXXFLAGS = -arch $(ARCH) -mmacosx-version-min=10.12
+export LDFLAGS = -arch $(ARCH) -mmacosx-version-min=10.12
+
+# Règles
+.PHONY: all clean configure compile bundle test help
+
+all: bundle
+
+# Configuration pour Intel
+configure:
+	@echo "⚙️  Configuration pour Intel $(ARCH)..."
+	@if [ ! -f "configure" ]; then \
+		echo "❌ Erreur: ./configure non trouvé. Exécutez d'abord 'autoreconf -fiv'"; \
+		exit 1; \
+	fi
+	@PKG_CONFIG_PATH="/usr/local/lib/pkgconfig:/opt/homebrew/lib/pkgconfig" \
+	LIBRARY_PATH="/usr/local/lib:/usr/local/opt/openssl@3/lib:$$LIBRARY_PATH" \
+	C_INCLUDE_PATH="/usr/local/include:/usr/local/opt/openssl@3/include:$$C_INCLUDE_PATH" \
+	CPLUS_INCLUDE_PATH="/usr/local/include:/usr/local/opt/openssl@3/include:$$CPLUS_INCLUDE_PATH" \
+	PATH="/usr/local/bin:$$PATH" \
+	LDFLAGS="$(LDFLAGS) -L/usr/local/lib -L/usr/local/opt/openssl@3/lib" \
+	CPPFLAGS="-I/usr/local/include -I/usr/local/opt/openssl@3/include" \
+	./configure \
+		--host=$(ARCH)-apple-darwin \
+		--build=arm64-apple-darwin \
+		--prefix=/usr/local \
+		CFLAGS="$(CFLAGS)" \
+		CXXFLAGS="$(CXXFLAGS)" \
+		LDFLAGS="$(LDFLAGS) -L/usr/local/lib -L/usr/local/opt/openssl@3/lib" \
+		CPPFLAGS="-I/usr/local/include -I/usr/local/opt/openssl@3/include"
+
+# Compilation
+compile: configure
+	@echo "🏗️  Compilation en cours..."
+	$(MAKE) -j$(shell sysctl -n hw.ncpu)
+	@echo "🔍 Vérification de l'architecture..."
+	@if [ -f "src/butt" ]; then \
+		echo "Architecture compilée:"; \
+		file src/butt; \
+		echo ""; \
+		echo "Dépendances:"; \
+		otool -L src/butt | head -10; \
+	else \
+		echo "❌ Erreur: Exécutable non trouvé"; \
+		exit 1; \
+	fi
+
+# Création du bundle Intel
+bundle: compile
+	@echo "📦 Création du bundle Intel..."
+	@rm -rf "$(BUILD_DIR)"
+	@mkdir -p "$(BUILD_DIR)"
+	@./build_intel_bundle.sh
+
+# Test du bundle
+test: bundle
+	@echo "🧪 Test du bundle Intel..."
+	@BUNDLE_PATH="$(BUILD_DIR)/$(BUNDLE_NAME)"
+	@if [ -d "$$BUNDLE_PATH" ]; then \
+		echo "✅ Bundle trouvé: $$BUNDLE_PATH"; \
+		echo "Architecture:"; \
+		file "$$BUNDLE_PATH/Contents/MacOS/$(APP_NAME)"; \
+		echo ""; \
+		echo "Dépendances:"; \
+		otool -L "$$BUNDLE_PATH/Contents/MacOS/$(APP_NAME)" | head -10; \
+		echo ""; \
+		echo "Librairies dans Frameworks:"; \
+		ls -la "$$BUNDLE_PATH/Contents/Frameworks/"; \
+		echo ""; \
+		echo "Pour tester l'application:"; \
+		echo "  open $$BUNDLE_PATH"; \
+	else \
+		echo "❌ Erreur: Bundle non trouvé"; \
+		exit 1; \
+	fi
+
+# Création d'un DMG
+dmg: bundle
+	@echo "💿 Création du DMG pour Intel..."
+	@DMG_NAME="BUTT-$(VERSION)-Intel-x86_64.dmg"
+	@DMG_PATH="$(BUILD_DIR)/$$DMG_NAME"
+	@TMP_DMG="$(BUILD_DIR)/tmp.dmg"
+	@MOUNT_POINT="$(BUILD_DIR)/dmg_mount"
+	@rm -rf "$$DMG_PATH" "$$TMP_DMG" "$$MOUNT_POINT"
+	@mkdir -p "$$MOUNT_POINT"
+	@cp -R "$(BUILD_DIR)/$(BUNDLE_NAME)" "$$MOUNT_POINT/"
+	@ln -s /Applications "$$MOUNT_POINT/Applications"
+	@hdiutil create -srcfolder "$$MOUNT_POINT" -format UDRW -size 200m "$$TMP_DMG"
+	@hdiutil attach "$$TMP_DMG" -mountpoint "$$MOUNT_POINT"
+	@hdiutil detach "$$MOUNT_POINT"
+	@hdiutil convert "$$TMP_DMG" -format UDZO -o "$$DMG_PATH"
+	@rm -rf "$$TMP_DMG" "$$MOUNT_POINT"
+	@echo "✅ DMG créé: $$DMG_PATH"
+
+# Nettoyage
+clean:
+	@echo "🧹 Nettoyage..."
+	@$(MAKE) clean 2>/dev/null || true
+	@rm -rf "$(BUILD_DIR)"
+	@rm -rf build/
+	@echo "✅ Nettoyage terminé"
+
+# Nettoyage complet (y compris configure)
+distclean: clean
+	@echo "🧹 Nettoyage complet..."
+	@$(MAKE) distclean 2>/dev/null || true
+	@rm -f config.log config.status
+	@echo "✅ Nettoyage complet terminé"
+
+# Vérification des prérequis
+check:
+	@echo "🔍 Vérification des prérequis..."
+	@echo "Compilateur:"
+	@clang --version | head -1
+	@echo ""
+	@echo "Bibliothèques StereoTool disponibles:"
+	@for lib in "../libStereoTool_1051/lib/macOS/Universal/64/libStereoTool_64.dylib" \
+				"../libStereoTool_992/libStereoTool64.dylib" \
+				"libStereoTool64.dylib"; do \
+		if [ -f "$$lib" ]; then \
+			echo "✅ $$lib"; \
+			file "$$lib" | grep -E "(x86_64|arm64|universal)"; \
+		else \
+			echo "❌ $$lib"; \
+		fi; \
+	done
+	@echo ""
+	@echo "Dépendances système:"
+	@export PKG_CONFIG_PATH="/usr/local/lib/pkgconfig:/opt/homebrew/lib/pkgconfig"; \
+	for dep in pkg-config portaudio-2.0 ogg vorbis flac; do \
+		if pkg-config --exists $$dep 2>/dev/null; then \
+			echo "✅ $$dep: $$(pkg-config --modversion $$dep)"; \
+		else \
+			echo "❌ $$dep: Non trouvé"; \
+		fi; \
+	done
+	@echo -n "✅ fltk: "; \
+	if command -v fltk-config >/dev/null 2>&1; then \
+		fltk-config --version; \
+	else \
+		echo "❌ fltk-config non trouvé"; \
+	fi
+	@echo ""
+	@echo "Architectures des bibliothèques Intel:"
+	@for lib in /usr/local/lib/libogg.dylib /usr/local/lib/libvorbis.dylib /usr/local/lib/libFLAC.dylib; do \
+		if [ -f "$$lib" ]; then \
+			echo "✅ $$(basename $$lib): $$(file $$lib | grep -o 'x86_64\|arm64\|universal' | head -1)"; \
+		else \
+			echo "❌ $$(basename $$lib): Non trouvé"; \
+		fi; \
+	done
+
+# Aide
+help:
+	@echo "Makefile pour la compilation Intel x86_64 de BUTT"
+	@echo "=================================================="
+	@echo ""
+	@echo "Commandes disponibles:"
+	@echo "  make configure  - Configuration pour Intel x86_64"
+	@echo "  make compile    - Compilation de l'exécutable"
+	@echo "  make bundle     - Création du bundle .app"
+	@echo "  make test       - Test du bundle créé"
+	@echo "  make dmg        - Création d'un DMG distributible"
+	@echo "  make clean      - Nettoyage des fichiers compilés"
+	@echo "  make distclean  - Nettoyage complet"
+	@echo "  make check      - Vérification des prérequis"
+	@echo "  make help       - Affiche cette aide"
+	@echo ""
+	@echo "Build complet:"
+	@echo "  make all        - configure + compile + bundle"
+	@echo ""
+	@echo "Variables:"
+	@echo "  ARCH=$(ARCH)"
+	@echo "  BUILD_DIR=$(BUILD_DIR)"
+	@echo "  BUNDLE_NAME=$(BUNDLE_NAME)"
+	@echo ""
+	@echo "⚠️  Note: Ce Makefile compile spécifiquement pour Intel x86_64"
+	@echo "   sur une machine M2. Utilisez 'make -f Makefile.bundle' pour"
+	@echo "   la compilation universelle." 
