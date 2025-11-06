@@ -133,6 +133,26 @@ RESUME_BUNDLE_MACOS.md
 ROADMAP_EVOLUTION_2025.md
 README_DOCUMENTATION.md
 
+# Documentation de développement dans docs/
+docs/CORRECTION_*.md
+docs/RESOLUTION_*.md
+docs/RESUME_*.md
+docs/PROBLEME_*.md
+docs/DOCUMENTATION_PHASE_*.md
+docs/AMELIORATIONS_*.md
+docs/COMPILATION_*.md
+docs/CORRECTIONS_*.md
+docs/PROCHAINES_ETAPES_*.md
+docs/ROADMAP_*.md
+docs/RECOMMANDATIONS_*.md
+docs/INTEGRATION_*.md
+docs/README_*.md
+docs/bundle_stereoTool_guide.md
+docs/GUIDE_CONFLIT_*.md
+docs/GUIDE_CORE_AUDIO.md
+docs/GUIDE_TEST_*.md
+docs/GUIDE_BUNDLE_*.md
+
 # ============================================
 # Fichiers système
 # ============================================
@@ -190,16 +210,28 @@ vendor/
 *.egg-info/
 
 # ============================================
-# Fichiers à garder explicitement
+# Fichiers à garder explicitement dans docs/
+# ============================================
+# SEULEMENT ces fichiers dans docs/ seront publiés
+!docs/DEPANNAGE_AES67.md
+!docs/GUIDE_UTILISATION_RAPIDE.md
+!docs/GUIDE_DISTRIBUTION_DMG.md
+!docs/GUIDE_SAP_AES67.md
+!docs/STEREOTOOL_SDK_REFERENCE.md
+!docs/obs_aes67_setup.md
+
+# ============================================
+# Fichiers à garder explicitement (racine)
 # ============================================
 # Forcer l'inclusion de certains fichiers importants
 !README.md
 !LICENSE
+!LICENSE-DEPENDENCIES.md
 !CONTRIBUTING.md
+!CONTRIBUTORS.md
 !INSTALLATION.md
 !INTEGRATION_BLACKHOLE_COMPLETE.md
 !DEMARRAGE_RAPIDE_BLACKHOLE.md
-!docs/
 !integration_blackhole_butt/
 !scripts/
 !src/
