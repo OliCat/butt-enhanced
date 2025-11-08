@@ -17,7 +17,7 @@ This enhanced version adds professional broadcasting features to BUTT:
 ### 🌐 AES67 Audio-over-IP Output
 - **Industry-standard** AES67 audio streaming
 - Multicast support (239.69.145.58:5004 default)
-- Perfect for **OBS integration** via network
+- **OBS integration** via GStreamer pipeline (see [docs/README_AES67_OBS.md](docs/README_AES67_OBS.md))
 - PTP synchronization support
 - SAP announcements for automatic discovery
 - Configurable sample rate, bit depth, and channels
@@ -110,11 +110,10 @@ You should see in the console:
 
 ## 📖 Documentation
 
-- **[INSTALLATION.md](INSTALLATION.md)** - Detailed installation guide
-- **[INTEGRATION_BLACKHOLE_COMPLETE.md](INTEGRATION_BLACKHOLE_COMPLETE.md)** - BlackHole setup
-- **[DEMARRAGE_RAPIDE_BLACKHOLE.md](DEMARRAGE_RAPIDE_BLACKHOLE.md)** - Quick start guide (French)
-- **[integration_blackhole_butt/](integration_blackhole_butt/)** - Technical documentation
-- **[docs/](docs/)** - Additional guides and tutorials
+- **[docs/DOCUMENTATION_COMPLETE.md](docs/DOCUMENTATION_COMPLETE.md)** - Complete documentation (French)
+- **[docs/README_AES67_OBS.md](docs/README_AES67_OBS.md)** - AES67 integration with OBS Studio (complete setup guide)
+- **[DEMARRAGE_RAPIDE_BLACKHOLE.md](DEMARRAGE_RAPIDE_BLACKHOLE.md)** - BlackHole quick start guide (French)
+- **[docs/README.md](docs/README.md)** - Documentation index
 
 ---
 

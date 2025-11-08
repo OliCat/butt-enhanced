@@ -99,6 +99,7 @@ core.*
 *#
 .#*
 backup_*/
+docs_backup_*/
 
 # ============================================
 # Fichiers de test
@@ -106,6 +107,7 @@ backup_*/
 test_output.*
 test_*.wav
 test_*.mp3
+test_*.pkf
 *.pcap
 simple_stereo_test
 
@@ -213,6 +215,9 @@ vendor/
 # Fichiers à garder explicitement dans docs/
 # ============================================
 # SEULEMENT ces fichiers dans docs/ seront publiés
+!docs/DOCUMENTATION_COMPLETE.md
+!docs/README.md
+!docs/README_AES67_OBS.md
 !docs/DEPANNAGE_AES67.md
 !docs/GUIDE_UTILISATION_RAPIDE.md
 !docs/GUIDE_DISTRIBUTION_DMG.md
@@ -225,6 +230,7 @@ vendor/
 # ============================================
 # Forcer l'inclusion de certains fichiers importants
 !README.md
+!CHANGELOG.md
 !LICENSE
 !LICENSE-DEPENDENCIES.md
 !CONTRIBUTING.md
@@ -233,7 +239,7 @@ vendor/
 !INTEGRATION_BLACKHOLE_COMPLETE.md
 !DEMARRAGE_RAPIDE_BLACKHOLE.md
 !integration_blackhole_butt/
-!scripts/
+!build_macos_bundle.sh
 !src/
 !po/README
 !m4/.gitkeep
@@ -252,6 +258,10 @@ test_aes67*.sh
 test_audio*.sh
 test_fermeture*.sh
 test_pcm*.sdp
+
+# Scripts de développement (sauf build_macos_bundle.sh)
+scripts/
+!build_macos_bundle.sh
 
 # Fichiers SDP de test
 *.sdp

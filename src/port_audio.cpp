@@ -894,11 +894,22 @@ void *snd_mixer_thread(void *data)
             update_vu_buffers_post_stereotool(stream_buf, NULL, frame_size);
                 }
             }
-            
-            // Envoyer vers BlackHole pour Whisper Streaming
-            if (blackhole_initialized) {
-                blackhole_output.sendInterleaved(stream_buf, pa_frames);
+        }
+
+        // Envoyer vers BlackHole pour Whisper Streaming (toujours, même sans StereoTool)
+        static int blackhole_check_count = 0;
+        if (blackhole_check_count++ < 10) {
+            printf("🔍 BLACKHOLE CHECK: initialized=%d, stream_buf=%p, pa_frames=%d\n", 
+                   blackhole_initialized, (void*)stream_buf, pa_frames);
+        }
+        if (blackhole_initialized) {
+            static int blackhole_debug_count = 0;
+            if (blackhole_debug_count++ < 5) {
+                print_info("BlackHole: Sending audio data...", 0);
             }
+            blackhole_output.sendInterleaved(stream_buf, pa_frames);
+        } else if (blackhole_check_count < 10) {
+            printf("⚠️  BLACKHOLE: Not initialized, cannot send\n");
         }
 
             // Send processed audio to AES67 output
@@ -2078,18 +2089,24 @@ void snd_init_aes67(void)
     }
     
     // Initialiser BlackHole pour Whisper Streaming
+    print_info("BlackHole: Starting initialization...", 0);
     if (!blackhole_initialized) {
         int sample_rate = cfg.audio.samplerate;
         int channels = cfg.audio.channel;
         
+        print_info("BlackHole: Attempting to initialize...", 0);
         if (blackhole_output.initialize(sample_rate, channels)) {
             blackhole_initialized = true;
-            printf("✅ BlackHole initialisé pour Whisper Streaming (sample_rate: %d, channels: %d)\n", 
-                   sample_rate, channels);
+            char msg[256];
+            snprintf(msg, sizeof(msg), "✅ BlackHole initialisé pour Whisper Streaming (sample_rate: %d, channels: %d)", 
+                     sample_rate, channels);
+            print_info(msg, 0);
         } else {
-            printf("⚠️  BlackHole non initialisé, Whisper Streaming ne fonctionnera pas\n");
-            printf("    Installez BlackHole avec: brew install blackhole-2ch\n");
+            print_info("⚠️  BlackHole non initialisé, Whisper Streaming ne fonctionnera pas", 1);
+            print_info("    Installez BlackHole avec: brew install blackhole-2ch", 0);
         }
+    } else {
+        print_info("BlackHole: Already initialized", 0);
     }
 }
 

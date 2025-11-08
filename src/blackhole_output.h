@@ -5,8 +5,8 @@
 #include <AudioToolbox/AudioToolbox.h>
 #include <AudioUnit/AudioUnit.h>
 #include <vector>
-#include <queue>
 #include <mutex>
+#include "ringbuffer.h"
 
 class BlackHoleOutput {
 public:
@@ -34,9 +34,9 @@ private:
     int sample_rate_;
     int channels_;
     
-    // Queue pour stocker les données audio
-    std::queue<std::vector<float>> audio_queue_;
-    std::mutex queue_mutex_;
+    // Ring buffer pour stocker les données audio (taille = 2 secondes de données)
+    ringbuf_t audio_ringbuffer_;
+    std::mutex ringbuffer_mutex_;
     
     // Trouver l'ID du périphérique BlackHole
     AudioDeviceID findBlackHoleDevice();
