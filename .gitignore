@@ -135,6 +135,25 @@ RESUME_BUNDLE_MACOS.md
 ROADMAP_EVOLUTION_2025.md
 README_DOCUMENTATION.md
 
+# Fichiers de commit temporaires
+COMMIT_*.txt
+
+# Fichiers de test
+test_blackhole*.pkf
+test_blackhole*.wav
+aes67_*.pkf
+
+# Fichiers sources qui ne devraient pas être en racine
+flgui.cpp
+flgui.h
+gettext.h
+
+# Scripts de cleanup
+CLEANUP_PROJECT.sh
+
+# Fichiers de patch
+*.patch
+
 # Documentation de développement dans docs/
 docs/CORRECTION_*.md
 docs/RESOLUTION_*.md
