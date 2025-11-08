@@ -197,6 +197,8 @@ ffplay -f avfoundation -i ":BlackHole 2ch"
 
 ## 🏗️ Architecture Technique
 
+Voir **[ARCHITECTURE.md](ARCHITECTURE.md)** pour un diagramme complet de l'architecture.
+
 ### Composants principaux
 
 #### 1. AES67 Output (`src/aes67_output.cpp`)

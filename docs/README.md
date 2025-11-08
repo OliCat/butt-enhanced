@@ -6,6 +6,7 @@ Ce dossier contient la documentation essentielle de BUTT Enhanced.
 
 ### Documentation Principale
 - **[DOCUMENTATION_COMPLETE.md](DOCUMENTATION_COMPLETE.md)** - Documentation complète et à jour de BUTT Enhanced
+- **[ARCHITECTURE.md](ARCHITECTURE.md)** - Diagramme d'architecture et composants
 
 ### Guides Spécialisés
 
