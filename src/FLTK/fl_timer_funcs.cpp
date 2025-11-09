@@ -46,6 +46,7 @@
 #include "webrtc.h"
 #include "strfuncs.h"
 #include "fl_timer_funcs.h"
+#include "fl_callbacks.h"
 #include "logos.h"
 #include "Fl_LED.h"
 #include "command.h"
@@ -278,6 +279,13 @@ void has_agent_been_stopped_timer(void *)
 // Ajouts pour métriques AES67
 #include "../aes67_output.h"
 #include <chrono>
+
+// Timer périodique pour mise à jour du statut StereoTool (toutes les 500ms)
+void stereo_tool_status_timer(void *)
+{
+    update_stereo_tool_status();
+    Fl::repeat_timeout(0.5, &stereo_tool_status_timer);
+}
 
 void vu_meter_timer(void *)
 {

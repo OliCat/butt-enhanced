@@ -346,6 +346,7 @@ void check_aes67_sap_cb(void);
 void check_aes67_loopback_cb(void);
 void update_aes67_status_display(void);
 void button_aes67_copy_sdp_cb(void);
+void sync_aes67_ui_to_config(void);
 
 // ============================================================================
 // Core Audio Callbacks

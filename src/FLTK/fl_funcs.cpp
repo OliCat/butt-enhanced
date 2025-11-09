@@ -547,30 +547,14 @@ void fill_cfg_widgets(void)
         stereo_tool_init();
     }
     
-    // Update StereoTool status display
+    // Update StereoTool status display (initial)
     update_stereo_tool_status();
-
-    // Initialize AES67 section
-    aes67_output_t* aes67 = aes67_output_get_global_instance();
-    fl_g->check_aes67_enable->value(cfg.aes67.active);  // Restore from config
-    fl_g->input_aes67_ip->value(cfg.aes67.ip ? cfg.aes67.ip : "239.69.145.58");
-    fl_g->input_aes67_port->value(cfg.aes67.port > 0 ? cfg.aes67.port : 5004);
-    fl_g->input_aes67_iface->value(cfg.aes67.iface ? cfg.aes67.iface : "");
-    fl_g->check_aes67_ptp->value(cfg.aes67.ptp);
-    fl_g->check_aes67_sap->value(cfg.aes67.sap);
-    fl_g->check_aes67_loopback->value(cfg.aes67.loopback);
-    fl_g->label_aes67_status->label(cfg.aes67.active ? "Status: Connected" : "Status: Disconnected");
     
-    // Ensure AES67 output config matches the UI (but don't override active state!)
-    if (aes67) {
-        aes67_output_set_destination(aes67, fl_g->input_aes67_ip->value(), (int)fl_g->input_aes67_port->value());
-        aes67_output_set_ttl(aes67, cfg.aes67.ttl);
-        aes67_output_set_dscp(aes67, cfg.aes67.dscp);
-        if (cfg.aes67.iface && strlen(cfg.aes67.iface) > 0) {
-            aes67_output_set_interface(aes67, cfg.aes67.iface);
-        }
-        aes67_output_set_multicast_loopback(aes67, cfg.aes67.loopback);
-    }
+    // Démarrer le timer périodique pour mise à jour automatique du statut (toutes les 500ms)
+    Fl::add_timeout(0.5, &stereo_tool_status_timer);
+
+    // Initialize AES67 section - Synchronisation complète Config/UI
+    sync_aes67_ui_to_config();
 
     slider_mixer_cross_fader_cb(cfg.mixer.cross_fader, (void *)CB_CALLED_BY_CODE);
     fl_g->slider_mixer_cross_fader->value(cfg.mixer.cross_fader);

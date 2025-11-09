@@ -34,6 +34,7 @@ void stream_signal_timer(void *);
 void record_signal_timer(void *);
 void wait_for_radioco_timer(void *);
 void request_listener_count_timer(void *reset);
+void stereo_tool_status_timer(void *);
 
 void display_rotate_timer(void *);
 void app_timer(void *);

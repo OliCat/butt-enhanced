@@ -6693,72 +6693,9 @@ void check_midi_command_enable_cb(void)
     }
 }
 
-// StereoTool callbacks
-void check_stereo_tool_stream_cb(void)
-{
-    cfg.stereo_tool.enabled_stream = fl_g->check_stereo_tool_stream->value();
-    
-    // Recreate streaming instance if needed
-    if (cfg.stereo_tool.enabled_stream) {
-        // Initialize StereoTool library if not already done
-        if (!stereo_tool_is_available()) {
-            if (stereo_tool_init() != 0) {
-                print_info(_("StereoTool: Failed to initialize library"), 1);
-                fl_g->check_stereo_tool_stream->value(0);
-                cfg.stereo_tool.enabled_stream = 0;
-                update_stereo_tool_status();
-                return;
-            }
-        }
-        
-        if (stereo_tool_create_instance(&st_stream, cfg.stereo_tool.license_key, 
-                                       cfg.audio.samplerate, cfg.audio.channel) == 0) {
-            if (cfg.stereo_tool.preset_file_stream) {
-                stereo_tool_load_preset(&st_stream, cfg.stereo_tool.preset_file_stream);
-            }
-        }
-    } else {
-        stereo_tool_destroy_instance(&st_stream);
-    }
-    
-    update_stereo_tool_status();
-}
-
-void check_stereo_tool_record_cb(void)
-{
-    cfg.stereo_tool.enabled_rec = fl_g->check_stereo_tool_record->value();
-    
-    // Recreate recording instance if needed
-    if (cfg.stereo_tool.enabled_rec) {
-        // Initialize StereoTool library if not already done
-        if (!stereo_tool_is_available()) {
-            if (stereo_tool_init() != 0) {
-                print_info(_("StereoTool: Failed to initialize library"), 1);
-                fl_g->check_stereo_tool_record->value(0);
-                cfg.stereo_tool.enabled_rec = 0;
-                update_stereo_tool_status();
-                return;
-            }
-        }
-        
-        if (stereo_tool_create_instance(&st_record, cfg.stereo_tool.license_key, 
-                                       cfg.audio.samplerate, cfg.audio.channel) == 0) {
-            if (cfg.stereo_tool.preset_file_rec) {
-                stereo_tool_load_preset(&st_record, cfg.stereo_tool.preset_file_rec);
-            }
-        }
-    } else {
-        stereo_tool_destroy_instance(&st_record);
-    }
-    
-    update_stereo_tool_status();
-}
-
-void check_stereo_tool_replace_dsp_cb(void)
-{
-    cfg.stereo_tool.replace_dsp = fl_g->check_stereo_tool_replace_dsp->value();
-    update_stereo_tool_status();
-}
+// ============================================================================
+// Fonctions utilitaires pour StereoTool
+// ============================================================================
 
 // Fonction pour masquer la clé de licence dans les logs et affichage
 static char* mask_license_key(const char* license) {
@@ -6768,6 +6705,9 @@ static char* mask_license_key(const char* license) {
     
     size_t len = strlen(license);
     char* masked = (char*)malloc(len + 1);
+    if (!masked) {
+        return strdup("***");
+    }
     
     // Afficher les 4 premiers et 4 derniers caractères
     for (size_t i = 0; i < len; i++) {
@@ -6781,22 +6721,111 @@ static char* mask_license_key(const char* license) {
     return masked;
 }
 
+// Fonction utilitaire pour gestion mémoire sécurisée
+static char* safe_strdup(const char *src) {
+    if (!src) return NULL;
+    char *dst = strdup(src);
+    if (!dst) {
+        print_info("Error: Memory allocation failed", 1);
+    }
+    return dst;
+}
+
+// Fonction générique pour activer/désactiver une instance StereoTool
+// Évite la duplication de code entre stream et record
+static void stereo_tool_toggle_instance(
+    bool enable,
+    stereo_tool_t *st_instance,
+    const char *preset_file,
+    Fl_Check_Button *checkbox,
+    int *cfg_enabled_flag,
+    const char *instance_name)
+{
+    *cfg_enabled_flag = checkbox->value();
+    
+    if (enable) {
+        // Initialize StereoTool library if not already done
+        if (!stereo_tool_is_available()) {
+            if (stereo_tool_init() != 0) {
+                char msg[256];
+                snprintf(msg, sizeof(msg), 
+                        "StereoTool: Failed to initialize library for %s", instance_name);
+                print_info(msg, 1);
+                checkbox->value(0);
+                *cfg_enabled_flag = 0;
+                // Feedback immédiat nécessaire en cas d'erreur
+                update_stereo_tool_status();
+                return;
+            }
+        }
+        
+        if (stereo_tool_create_instance(st_instance, cfg.stereo_tool.license_key, 
+                                       cfg.audio.samplerate, cfg.audio.channel) == 0) {
+            if (preset_file) {
+                stereo_tool_load_preset(st_instance, preset_file);
+            }
+        }
+    } else {
+        stereo_tool_destroy_instance(st_instance);
+    }
+    
+    // Le timer périodique mettra à jour le statut automatiquement
+    // Pas besoin d'appel immédiat ici
+}
+
+// StereoTool callbacks
+void check_stereo_tool_stream_cb(void)
+{
+    stereo_tool_toggle_instance(
+        fl_g->check_stereo_tool_stream->value(),
+        &st_stream,
+        cfg.stereo_tool.preset_file_stream,
+        fl_g->check_stereo_tool_stream,
+        &cfg.stereo_tool.enabled_stream,
+        "streaming"
+    );
+}
+
+void check_stereo_tool_record_cb(void)
+{
+    stereo_tool_toggle_instance(
+        fl_g->check_stereo_tool_record->value(),
+        &st_record,
+        cfg.stereo_tool.preset_file_rec,
+        fl_g->check_stereo_tool_record,
+        &cfg.stereo_tool.enabled_rec,
+        "recording"
+    );
+}
+
+void check_stereo_tool_replace_dsp_cb(void)
+{
+    cfg.stereo_tool.replace_dsp = fl_g->check_stereo_tool_replace_dsp->value();
+    // Le timer périodique mettra à jour le statut automatiquement
+}
+
 void input_stereo_tool_license_cb(void)
 {
     const char* license = fl_g->input_stereo_tool_license->value();
     if (license && strlen(license) > 0) {
-        // Update license key in config
+        // Update license key in config (avec gestion mémoire sécurisée)
         if (cfg.stereo_tool.license_key) {
             free(cfg.stereo_tool.license_key);
         }
-        cfg.stereo_tool.license_key = strdup(license);
+        cfg.stereo_tool.license_key = safe_strdup(license);
+        if (!cfg.stereo_tool.license_key) {
+            print_info("StereoTool: Failed to save license key (memory error)", 1);
+            return;
+        }
         
         // Log avec clé masquée pour sécurité
         char* masked = mask_license_key(license);
-        char info_msg[256];
-        snprintf(info_msg, sizeof(info_msg), "StereoTool: Licence mise à jour: %s", masked);
-        print_info(info_msg, 0);
-        free(masked);
+        if (masked) {
+            char info_msg[256];
+            snprintf(info_msg, sizeof(info_msg), "StereoTool: Licence mise à jour: %s", masked);
+            print_info(info_msg, 0);
+            free(masked);
+        }
     }
     else {
         // Clear license if empty
@@ -6816,11 +6845,21 @@ void button_stereo_tool_test_license_cb(void)
         return;
     }
     
-    // Update license key in config
+    // Validation format basique (au moins 10 caractères)
+    if (strlen(license) < 10) {
+        print_info(_("Error: Invalid license key format (too short)"), 1);
+        return;
+    }
+    
+    // Update license key in config (avec gestion mémoire sécurisée)
     if (cfg.stereo_tool.license_key) {
         free(cfg.stereo_tool.license_key);
     }
-    cfg.stereo_tool.license_key = strdup(license);
+    cfg.stereo_tool.license_key = safe_strdup(license);
+    if (!cfg.stereo_tool.license_key) {
+        print_info(_("Error: Failed to save license key (memory error)"), 1);
+        return;
+    }
     
     // Initialize StereoTool library if not already done
     if (!stereo_tool_is_available()) {
@@ -6890,8 +6929,7 @@ void update_stereo_tool_status(void)
 void choice_stereo_tool_preset_stream_cb(void)
 {
     // This callback is triggered when user selects a preset from the dropdown
-    // For now, we'll just update the status
-    update_stereo_tool_status();
+    // Le timer périodique mettra à jour le statut automatiquement
 }
 
 void button_stereo_tool_load_preset_stream_cb(void)
@@ -6912,11 +6950,15 @@ void button_stereo_tool_load_preset_stream_cb(void)
         {
             const char *filename = fnfc.filename();
             if (filename) {
-                // Update config
+                // Update config (avec gestion mémoire sécurisée)
                 if (cfg.stereo_tool.preset_file_stream) {
                     free(cfg.stereo_tool.preset_file_stream);
                 }
-                cfg.stereo_tool.preset_file_stream = strdup(filename);
+                cfg.stereo_tool.preset_file_stream = safe_strdup(filename);
+                if (!cfg.stereo_tool.preset_file_stream) {
+                    print_info(_("Error: Failed to save preset path (memory error)"), 1);
+                    return;
+                }
                 
                 // Load preset if streaming instance is active
                 if (cfg.stereo_tool.enabled_stream && st_stream.status == STEREO_TOOL_ENABLED) {
@@ -6937,6 +6979,7 @@ void button_stereo_tool_load_preset_stream_cb(void)
                 fl_g->choice_stereo_tool_preset_stream->add(basename);
                 fl_g->choice_stereo_tool_preset_stream->value(0);
                 
+                // Feedback immédiat nécessaire après chargement preset
                 update_stereo_tool_status();
             }
             break;
@@ -6947,8 +6990,7 @@ void button_stereo_tool_load_preset_stream_cb(void)
 void choice_stereo_tool_preset_record_cb(void)
 {
     // This callback is triggered when user selects a preset from the dropdown
-    // For now, we'll just update the status
-    update_stereo_tool_status();
+    // Le timer périodique mettra à jour le statut automatiquement
 }
 
 void button_stereo_tool_load_preset_record_cb(void)
@@ -6969,11 +7011,15 @@ void button_stereo_tool_load_preset_record_cb(void)
         {
             const char *filename = fnfc.filename();
             if (filename) {
-                // Update config
+                // Update config (avec gestion mémoire sécurisée)
                 if (cfg.stereo_tool.preset_file_rec) {
                     free(cfg.stereo_tool.preset_file_rec);
                 }
-                cfg.stereo_tool.preset_file_rec = strdup(filename);
+                cfg.stereo_tool.preset_file_rec = safe_strdup(filename);
+                if (!cfg.stereo_tool.preset_file_rec) {
+                    print_info(_("Error: Failed to save preset path (memory error)"), 1);
+                    return;
+                }
                 
                 // Load preset if recording instance is active
                 if (cfg.stereo_tool.enabled_rec && st_record.status == STEREO_TOOL_ENABLED) {
@@ -6994,6 +7040,7 @@ void button_stereo_tool_load_preset_record_cb(void)
                 fl_g->choice_stereo_tool_preset_record->add(basename);
                 fl_g->choice_stereo_tool_preset_record->value(0);
                 
+                // Feedback immédiat nécessaire après chargement preset
                 update_stereo_tool_status();
             }
             break;
@@ -7030,6 +7077,39 @@ void button_stereo_tool_save_preset_cb(void)
 // ============================================================================
 // AES67 Callbacks
 // ============================================================================
+
+// Fonction de synchronisation complète Config/UI pour AES67
+void sync_aes67_ui_to_config(void)
+{
+    aes67_output_t* aes67 = aes67_output_get_global_instance();
+    
+    // Synchroniser tous les champs UI depuis la config
+    fl_g->check_aes67_enable->value(cfg.aes67.active);
+    fl_g->input_aes67_ip->value(cfg.aes67.ip ? cfg.aes67.ip : "239.69.145.58");
+    fl_g->input_aes67_port->value(cfg.aes67.port > 0 ? cfg.aes67.port : 5004);
+    fl_g->input_aes67_iface->value(cfg.aes67.iface ? cfg.aes67.iface : "");
+    fl_g->check_aes67_ptp->value(cfg.aes67.ptp);
+    fl_g->check_aes67_sap->value(cfg.aes67.sap);
+    fl_g->check_aes67_loopback->value(cfg.aes67.loopback);
+    
+    // Mettre à jour le statut
+    update_aes67_status_display();
+    
+    // Synchroniser la configuration AES67 avec l'instance (si disponible)
+    if (aes67) {
+        const char* ip = fl_g->input_aes67_ip->value();
+        int port = (int)fl_g->input_aes67_port->value();
+        aes67_output_set_destination(aes67, ip, port);
+        aes67_output_set_ttl(aes67, cfg.aes67.ttl);
+        aes67_output_set_dscp(aes67, cfg.aes67.dscp);
+        if (cfg.aes67.iface && strlen(cfg.aes67.iface) > 0) {
+            aes67_output_set_interface(aes67, cfg.aes67.iface);
+        }
+        aes67_output_set_multicast_loopback(aes67, cfg.aes67.loopback);
+        aes67_output_set_ptp_enabled(aes67, cfg.aes67.ptp);
+        aes67_output_set_sap_enabled(aes67, cfg.aes67.sap);
+    }
+}
 
 void check_aes67_enable_cb(void)
 {
@@ -7109,7 +7189,16 @@ void input_aes67_ip_cb(void)
         fl_g->input_aes67_ip->redraw();
         
         aes67_output_set_destination(aes67, ip, port);
-        cfg.aes67.ip = strdup(ip);
+        
+        // Sauvegarder dans la config (avec gestion mémoire sécurisée)
+        if (cfg.aes67.ip) {
+            free(cfg.aes67.ip);
+        }
+        cfg.aes67.ip = safe_strdup(ip);
+        if (!cfg.aes67.ip) {
+            print_info("AES67: Failed to save IP address (memory error)", 1);
+            return;
+        }
         cfg.aes67.port = port;
         cfg_write_file(NULL);
         print_info("AES67: Destination updated", 0);
@@ -7135,7 +7224,16 @@ void input_aes67_port_cb(void)
         
         if (ip && validate_ip_address(ip)) {
             aes67_output_set_destination(aes67, ip, port);
-            cfg.aes67.ip = strdup(ip);
+            
+            // Sauvegarder dans la config (avec gestion mémoire sécurisée)
+            if (cfg.aes67.ip) {
+                free(cfg.aes67.ip);
+            }
+            cfg.aes67.ip = safe_strdup(ip);
+            if (!cfg.aes67.ip) {
+                print_info("AES67: Failed to save IP address (memory error)", 1);
+                return;
+            }
             cfg.aes67.port = port;
             cfg_write_file(NULL);
             print_info("AES67: Destination updated", 0);
@@ -7162,11 +7260,15 @@ void input_aes67_iface_cb(void)
         
         aes67_output_set_interface(aes67, iface);
         
-        // Sauvegarder dans la config
+        // Sauvegarder dans la config (avec gestion mémoire sécurisée)
         if (cfg.aes67.iface) {
             free(cfg.aes67.iface);
         }
-        cfg.aes67.iface = strdup(iface ? iface : "");
+        cfg.aes67.iface = safe_strdup(iface ? iface : "");
+        if (!cfg.aes67.iface && (iface && strlen(iface) > 0)) {
+            print_info("AES67: Failed to save interface (memory error)", 1);
+            return;
+        }
         cfg_write_file(NULL);
         
         char info_msg[256];
