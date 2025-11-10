@@ -1,7 +1,7 @@
 # 📚 Documentation Complète - BUTT Enhanced
 
 **Version**: 1.45.0-Enhanced  
-**Date**: Janvier 2025  
+**Date**: Novembre 2025  
 **Plateforme**: macOS (Apple Silicon & Intel)
 
 ---
@@ -63,9 +63,7 @@ brew install portaudio opus flac lame fltk libvorbis libogg \
 
 ### Installation de BlackHole
 
-```bash
-brew install blackhole-2ch
-```
+Télécharger BlackHole-2ch depuis Le site [Existential Audio](https://existential.audio/blackhole/#blackhole_logo)
 
 ### Compilation
 
@@ -115,7 +113,7 @@ Vérification dans les logs :
 
 ### Configuration StereoTool (optionnel)
 
-1. Télécharger StereoTool SDK depuis [stereo-tool.com](https://www.stereo-tool.com/)
+1. Télécharger StereoTool SDK depuis [stereo-tool.com](https://www.thimeo.com/stereo-tool/)
 2. Placer `libStereoTool64.dylib` dans le répertoire du projet
 3. Dans BUTT : **Settings** → **StereoTool**
 4. Activer **Enable StereoTool Processing**
@@ -252,13 +250,6 @@ Voir [README_AES67_OBS.md](README_AES67_OBS.md) pour :
 - Intégration avec OBS Studio via PulseAudio
 - Dashboard de supervision
 
-### Guide BlackHole
-
-Voir `../DEMARRAGE_RAPIDE_BLACKHOLE.md` dans la racine pour :
-- Installation BlackHole
-- Intégration Whisper Streaming
-- Tests et validation
-
 ### Guide StereoTool
 
 Voir [STEREOTOOL_SDK_REFERENCE.md](STEREOTOOL_SDK_REFERENCE.md) pour :
@@ -291,13 +282,8 @@ Voir [STEREOTOOL_SDK_REFERENCE.md](STEREOTOOL_SDK_REFERENCE.md) pour :
 #### Problème : BlackHole non initialisé
 
 **Solutions** :
-```bash
-# Réinstaller BlackHole
-brew reinstall blackhole-2ch
 
-# Vérifier l'installation
-brew list blackhole-2ch
-```
+Réinstaller BlackHole-2ch. Vérifier que l'insterface virtuelle est créée
 
 #### Problème : Son saccadé
 
@@ -358,7 +344,7 @@ Voir [CONTRIBUTING.md](../CONTRIBUTING.md) pour les guidelines de contribution.
 
 ### Issues GitHub
 
-[github.com/VOTRE_ORG/butt-enhanced/issues](https://github.com/VOTRE_ORG/butt-enhanced/issues)
+[github.com/OliCat/butt-enhanced/issues](https://github.com/OliCatbutt-enhanced/issues)
 
 ### Documentation
 
@@ -377,7 +363,7 @@ Voir [CONTRIBUTING.md](../CONTRIBUTING.md) pour les guidelines de contribution.
 ### StereoTool SDK
 
 **Propriétaire** - Non inclus dans cette distribution  
-Téléchargement : [stereo-tool.com](https://www.stereo-tool.com/)
+Téléchargement : [Thimeo](https://www.thimeo.com/stereo-tool/)
 
 ### Dépendances
 
@@ -385,6 +371,6 @@ Voir [LICENSE-DEPENDENCIES.md](../LICENSE-DEPENDENCIES.md)
 
 ---
 
-**Dernière mise à jour** : Janvier 2025  
+**Dernière mise à jour** : Novembre 2025  
 **Version** : 1.45.0-Enhanced
 
