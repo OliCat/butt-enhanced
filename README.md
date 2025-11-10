@@ -140,7 +140,7 @@ python whisper_streaming_service.py
 
 ### StereoTool Setup (Optional)
 
-1. Download SDK from [stereo-tool.com](https://www.stereo-tool.com/)
+1. Download SDK from [Thimeo](https://www.thimeo.com/stereo-tool/)
 2. For broadcast use, purchase a PRO license
 3. Place `libStereoTool64.dylib` in project root before compilation
 4. Enable in BUTT Settings → StereoTool
