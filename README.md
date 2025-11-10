@@ -76,7 +76,7 @@ brew install portaudio opus flac lame fltk libvorbis libogg \
              autoconf automake libtool
 
 # 2. Clone repository
-git clone https://github.com/VOTRE_ORG/butt-enhanced.git
+git clone https://github.com/OliCat/butt-enhanced.git
 cd butt-enhanced
 
 # 3. (Optional) Download StereoTool SDK
@@ -112,7 +112,6 @@ You should see in the console:
 
 - **[docs/DOCUMENTATION_COMPLETE.md](docs/DOCUMENTATION_COMPLETE.md)** - Complete documentation (French)
 - **[docs/README_AES67_OBS.md](docs/README_AES67_OBS.md)** - AES67 integration with OBS Studio (complete setup guide)
-- **[DEMARRAGE_RAPIDE_BLACKHOLE.md](DEMARRAGE_RAPIDE_BLACKHOLE.md)** - BlackHole quick start guide (French)
 - **[docs/README.md](docs/README.md)** - Documentation index
 
 ---
@@ -156,7 +155,7 @@ We welcome contributions from the community! See [CONTRIBUTING.md](CONTRIBUTING.
 
 ```bash
 # Clone with development branches
-git clone -b develop https://github.com/VOTRE_ORG/butt-enhanced.git
+git clone -b develop https://github.com/OliCat/butt-enhanced.git
 
 # Build in debug mode
 ./configure CXXFLAGS="-g -O0"

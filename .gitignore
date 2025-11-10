@@ -114,7 +114,10 @@ simple_stereo_test
 # ============================================
 # Documentation de développement (à exclure)
 # ============================================
-# Garder seulement la doc utile pour les utilisateurs
+# Répertoire de développement (fichiers intermédiaires, docs internes, scripts de debug)
+dev/
+
+# Garder seulement la doc utile pour les utilisateurs (fichiers restants en racine)
 CORRECTION_*.md
 DEBUG_*.md
 SOLUTION_*.md
@@ -124,21 +127,6 @@ SYNTHESE_*.md
 CHANGELOG_V*.md
 archives_dev_*/
 *.tar.gz
-
-# Guides internes (pas pour GitHub public)
-GUIDE_GITHUB.md
-POUR_COMMENCER.md
-FICHIERS_CREES.md
-GUIDE_INSTALLATION_MAC_STUDIO.md
-IMPLEMENTATION_SUMMARY.md
-RESUME_BUNDLE_MACOS.md
-ROADMAP_EVOLUTION_2025.md
-README_DOCUMENTATION.md
-AMELIORATIONS_IMPLMENTEES.md
-ANALYSE_AMELIORATIONS_INTERFACE.md
-
-# Fichiers de commit temporaires
-COMMIT_*.txt
 
 # Fichiers de test
 test_blackhole*.pkf
