@@ -170,7 +170,6 @@ make check
 ## 📜 License
 
 ### BUTT Enhanced Code
-Copyright © 2025 Radio Cause Commune & Contributors
 
 This project is licensed under **GNU General Public License v2.0** - see [LICENSE](LICENSE) file for details.
 
@@ -210,7 +209,7 @@ See [LICENSE-DEPENDENCIES.md](LICENSE-DEPENDENCIES.md) for full list of dependen
 ## 📞 Support
 
 ### Issues & Bug Reports
-- GitHub Issues: [github.com/VOTRE_ORG/butt-enhanced/issues](https://github.com/VOTRE_ORG/butt-enhanced/issues)
+- GitHub Issues: [github.com/OliCat/butt-enhanced/issues](https://github.com/OliCat/butt-enhanced/issues)
 
 ### Community
 - Radio Cause Commune: [causecommune.fm](https://www.causecommune.fm/)
