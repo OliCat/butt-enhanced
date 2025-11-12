@@ -181,7 +181,7 @@ Based on [BUTT](https://danielnoethen.de/butt/) by Daniel Nöthen.
 - **License**: Proprietary (© Hans van Zutphen / Thimeo)
 - **Free** for personal use
 - **PRO license required** for broadcast/commercial use
-- Download from: [stereo-tool.com](https://www.stereo-tool.com/)
+- Download from: [www.thimeo.com](https://www.thimeo.com/stereo-tool/)
 
 ### Dependencies
 See [LICENSE-DEPENDENCIES.md](LICENSE-DEPENDENCIES.md) for full list of dependencies and their licenses.
