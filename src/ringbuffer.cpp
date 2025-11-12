@@ -121,11 +121,13 @@ unsigned int rb_read(ringbuf_t *rb, char *dest)
         rb->r_ptr = rb->buf + (len - (end_ptr - rb->r_ptr));
     }
 
-    pthread_mutex_unlock(&rb->mutex);
-
+    // 🔧 CORRECTION CRITIQUE: Mettre à jour rb->full AVANT de déverrouiller le mutex
+    // Cela évite la race condition avec rb_write()
     if (rb->w_ptr == rb->r_ptr) {
         rb->full = 0;
     }
+
+    pthread_mutex_unlock(&rb->mutex);
 
     return len;
 }
@@ -133,6 +135,7 @@ unsigned int rb_read(ringbuf_t *rb, char *dest)
 unsigned int rb_read_len(ringbuf_t *rb, char *dest, unsigned int len)
 {
     char *end_ptr;
+    unsigned int available;
 
     if (!dest || !rb->buf) {
         return 0;
@@ -143,8 +146,34 @@ unsigned int rb_read_len(ringbuf_t *rb, char *dest, unsigned int len)
 
     pthread_mutex_lock(&rb->mutex);
 
+    // 🔧 CORRECTION CRITIQUE: Vérifier les données disponibles AVANT de lire
+    // Calculer les données disponibles sans déverrouiller le mutex
+    if (rb->w_ptr == rb->r_ptr && rb->full) {
+        available = rb->size;
+    }
+    else if (rb->w_ptr == rb->r_ptr && !rb->full) {
+        available = 0;
+    }
+    else if (rb->w_ptr > rb->r_ptr) {
+        available = rb->w_ptr - rb->r_ptr;
+    }
+    else {
+        end_ptr = rb->buf + rb->size;
+        available = end_ptr - rb->r_ptr;
+        available += rb->w_ptr - rb->buf;
+    }
+
+    // Ne lire que ce qui est réellement disponible
+    if (len > available) {
+        len = available;
+    }
+
+    if (len == 0) {
+        pthread_mutex_unlock(&rb->mutex);
+        return 0;
+    }
+
     end_ptr = rb->buf + rb->size;
-    // len = rb_filled(rb);
 
     if (rb->r_ptr + len < end_ptr) {
         memcpy(dest, rb->r_ptr, len);
@@ -152,18 +181,24 @@ unsigned int rb_read_len(ringbuf_t *rb, char *dest, unsigned int len)
     }
     /*buf content crosses the start point of the ring*/
     else {
+        unsigned int first_part = end_ptr - rb->r_ptr;
+        unsigned int second_part = len - first_part;
         /*copy from r_ptr to start of ringbuffer*/
-        memcpy(dest, rb->r_ptr, end_ptr - rb->r_ptr);
-        /*copy from start of ringbuffer to w_ptr*/
-        memcpy(dest + (end_ptr - rb->r_ptr), rb->buf, len - (end_ptr - rb->r_ptr));
-        rb->r_ptr = rb->buf + (len - (end_ptr - rb->r_ptr));
+        memcpy(dest, rb->r_ptr, first_part);
+        /*copy from start of ringbuffer to w_ptr (only what's available)*/
+        if (second_part > 0) {
+            memcpy(dest + first_part, rb->buf, second_part);
+        }
+        rb->r_ptr = rb->buf + second_part;
     }
 
-    pthread_mutex_unlock(&rb->mutex);
-
+    // 🔧 CORRECTION CRITIQUE: Mettre à jour rb->full AVANT de déverrouiller le mutex
+    // Cela évite la race condition avec rb_write()
     if (rb->w_ptr == rb->r_ptr) {
         rb->full = 0;
     }
+
+    pthread_mutex_unlock(&rb->mutex);
 
     return len;
 }

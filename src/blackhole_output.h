@@ -31,12 +31,18 @@ public:
 private:
     AudioUnit output_unit_;
     bool initialized_;
+    bool audio_started_;  // 🔧 NOUVEAU: Indique si l'AudioUnit a démarré
     int sample_rate_;
     int channels_;
     
-    // Ring buffer pour stocker les données audio (taille = 2 secondes de données)
+    // Ring buffer pour stocker les données audio
+    // Note: Le ring buffer a son propre mutex interne, pas besoin de mutex externe
     ringbuf_t audio_ringbuffer_;
-    std::mutex ringbuffer_mutex_;
+    
+    // 🔧 OPTIMISATION: Buffers pré-alloués pour éviter les allocations dans le callback temps-réel
+    std::vector<float> render_buffer_;          // Buffer de conversion interleaved
+    std::vector<char> temp_read_buffer_;        // Buffer temporaire de lecture
+    UInt32 max_frames_per_callback_;            // Taille maximale des buffers
     
     // Trouver l'ID du périphérique BlackHole
     AudioDeviceID findBlackHoleDevice();

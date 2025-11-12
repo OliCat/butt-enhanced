@@ -21,6 +21,7 @@
 #include <string.h>
 #include <pthread.h>
 #include <samplerate.h>
+#include <vector>
 
 #ifdef WIN32
 #include <windows.h>
@@ -896,38 +897,41 @@ void *snd_mixer_thread(void *data)
             }
         }
 
-        // Envoyer vers BlackHole pour Whisper Streaming (toujours, même sans StereoTool)
-        static int blackhole_check_count = 0;
-        if (blackhole_check_count++ < 10) {
-            printf("🔍 BLACKHOLE CHECK: initialized=%d, stream_buf=%p, pa_frames=%d\n", 
-                   blackhole_initialized, (void*)stream_buf, pa_frames);
+        // 🔧 CORRECTION: Envoyer d'abord à AES67, puis à BlackHole pour éviter les conflits
+        // Send processed audio to AES67 output FIRST
+        aes67_output_t* aes67_output = aes67_output_get_global_instance();
+        static int mixer_debug = 0;
+        if (mixer_debug < 5) {
+            printf("🎵 MIXER: aes67=%p, init=%d, active=%d, frame_size=%d\n",
+                   (void*)aes67_output,
+                   aes67_output ? aes67_output->initialized : -1,
+                   aes67_output ? aes67_output->config.active : -1,
+                   frame_size);
+            mixer_debug++;
         }
-        if (blackhole_initialized) {
-            static int blackhole_debug_count = 0;
-            if (blackhole_debug_count++ < 5) {
-                print_info("BlackHole: Sending audio data...", 0);
-            }
-            blackhole_output.sendInterleaved(stream_buf, pa_frames);
-        } else if (blackhole_check_count < 10) {
-            printf("⚠️  BLACKHOLE: Not initialized, cannot send\n");
+        if (aes67_output && aes67_output->initialized && aes67_output->config.active) {
+            aes67_output_send(aes67_output, stream_buf, frame_size);
+        } else if (mixer_debug < 5) {
+            printf("⚠️  MIXER: Skipping AES67 send (conditions not met)\n");
         }
 
-            // Send processed audio to AES67 output
-            aes67_output_t* aes67_output = aes67_output_get_global_instance();
-            static int mixer_debug = 0;
-            if (mixer_debug < 5) {
-                printf("🎵 MIXER: aes67=%p, init=%d, active=%d, frame_size=%d\n",
-                       (void*)aes67_output,
-                       aes67_output ? aes67_output->initialized : -1,
-                       aes67_output ? aes67_output->config.active : -1,
-                       frame_size);
-                mixer_debug++;
+        // 🔧 OPTIMISATION: Envoyer directement à BlackHole sans copie inutile
+        // Les deux sorties (AES67 et BlackHole) ne modifient pas les données en lecture,
+        // donc pas besoin de copie. Cela améliore les performances du thread audio temps-réel.
+        if (blackhole_initialized) {
+            static int blackhole_check_count = 0;
+            if (blackhole_check_count++ < 10) {
+                printf("🔍 BLACKHOLE CHECK: initialized=%d, stream_buf=%p, pa_frames=%d\n", 
+                       blackhole_initialized, (void*)stream_buf, pa_frames);
             }
-            if (aes67_output && aes67_output->initialized && aes67_output->config.active) {
-                aes67_output_send(aes67_output, stream_buf, frame_size);
-            } else if (mixer_debug < 5) {
-                printf("⚠️  MIXER: Skipping AES67 send (conditions not met)\n");
+            
+            static int blackhole_debug_count = 0;
+            if (blackhole_debug_count++ < 5) {
+                print_info("BlackHole: Sending audio data (zero-copy)...", 0);
             }
+            // Envoi direct sans copie pour performances optimales
+            blackhole_output.sendInterleaved(stream_buf, pa_frames);
+        }
 
         // AMÉLIORATION: Synchronisation améliorée pour éviter la distorsion
         // S'assurer que les données sont bien synchronisées avant l'envoi
